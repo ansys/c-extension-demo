@@ -7,3 +7,7 @@
 build
 dist
 __pycache__
+
+# C directories
+bin/
+obj/
