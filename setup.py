@@ -1,3 +1,5 @@
+"""Setup file for points_demo."""
+
 from io import open as io_open
 import os
 from setuptools import setup, Extension, find_packages

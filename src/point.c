@@ -1,4 +1,3 @@
-#define PY_SSIZE_T_CLEAN
 #include <Python.h>
 #include "structmember.h"
 
@@ -88,16 +87,22 @@ Point_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return (PyObject *) self;
 }
 
+// __init__ Constructor for the PointType class
 static int
 Point_init(PointObject *self, PyObject *args, PyObject *kwds)
 {
     static char *kwlist[] = {"x", "y", "z", NULL};
     PyObject *x = NULL, *y = NULL, *z = NULL;
 
-    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOO", kwlist,
-                                     &x, &y, &z))
+    // Accept at maximum three python objects. At runtime these will be type checked
+    // due to PyFloat_AsDouble.
+    //
+    // Note how there is nothing before |, indicating that this constructor
+    // accepts no args. These kwarg args are optional.
+    if (!PyArg_ParseTupleAndKeywords(args, kwds, "|OOO", kwlist, &x, &y, &z))
         return -1;
 
+    // Convert the python object to a C double
     if (x) {
       self->x = PyFloat_AsDouble(x);
     }
@@ -110,6 +115,7 @@ Point_init(PointObject *self, PyObject *args, PyObject *kwds)
     return 0;
 }
 
+// This section contains the defintion of the class attributes (members)
 static PyMemberDef Point_members[] = {
     {"x", T_DOUBLE, offsetof(PointObject, x), 0,
      "X Position."},
@@ -121,7 +127,7 @@ static PyMemberDef Point_members[] = {
 };
 
 
-// Clear the point by setting all coordinates to 0.0
+// Method clearing the PointObject by setting all coordinates to 0.0
 static PyObject *
 Point_clear(PointObject *self, PyObject *Py_UNUSED(ignored))
 {
@@ -139,7 +145,8 @@ point_repr(PointObject *self)
     PyObject *result;
     char buffer[100];
 
-    int strlen = snprintf(buffer, sizeof(buffer), "Point(%f, %f, %f)", self->x, self->y, self->z);
+    int strlen = snprintf(buffer, sizeof(buffer), "Point(%f, %f, %f)",
+                          self->x, self->y, self->z);
     result = _PyUnicode_FromASCII(buffer, strlen);
     return result;
 }
@@ -153,11 +160,37 @@ static PyMethodDef Point_methods[] = {
     {NULL}  /* Sentinel */
 };
 
-// PointType object definition
+// PointType class definition
 static PyTypeObject PointType = {
     PyVarObject_HEAD_INIT(NULL, 0)
     .tp_name = "point.Point",
-    .tp_doc = PyDoc_STR("Point objects"),
+    .tp_doc = PyDoc_STR(
+"Examples\n"
+"--------\n"
+"Create a point.\n"
+"\n"
+">>> from point import Point\n"
+">>> point = Point()\n"
+">>> point\n"
+"Point(0.0, 0.0, 0.0)\n"
+"\n"
+"Modify the x coordinate.\n"
+"\n"
+">>> point.x = 2.0\n"
+">>> point.x\n"
+"2.0\n"
+"\n"
+"Initialize with non-default coordinates\n"
+"\n"
+">>> point = Point(x=2.0, y=-1.0, z=4.0)\n"
+">>> point\n"
+"Point(2.0, -1.0, 4.0)\n"
+"\n"
+"Clear the point.\n"
+"\n"
+">>> point.clear()\n"
+">>> point\n"
+"Point(0.0, 0.0, 0.0)\n"),
     .tp_basicsize = sizeof(PointObject),
     .tp_itemsize = 0,
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BASETYPE,
@@ -169,8 +202,8 @@ static PyTypeObject PointType = {
     .tp_repr = (reprfunc)point_repr,
 };
 
-// Module definition
-static PyModuleDef custommodule = {
+// Module definition. This includes the name and docstring of the module.
+static PyModuleDef point_module = {
     PyModuleDef_HEAD_INIT,
     .m_name = "point",
     .m_doc = "Example point module that contains the Point class.",
@@ -182,13 +215,14 @@ PyMODINIT_FUNC
 PyInit_point(void)
 {
     PyObject *m;
-    if (PyType_Ready(&PointType) < 0)
-        return NULL;
-
-    m = PyModule_Create(&custommodule);
+    m = PyModule_Create(&point_module);
     if (m == NULL)
         return NULL;
 
+    if (PyType_Ready(&PointType) < 0)
+        return NULL;
+
+    // Define the point class here
     Py_INCREF(&PointType);
     if (PyModule_AddObject(m, "Point", (PyObject *) &PointType) < 0) {
         Py_DECREF(&PointType);

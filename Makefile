@@ -6,7 +6,7 @@ EXE := $(BIN_DIR)/point.so
 SRC := $(wildcard $(SRC_DIR)/*.c)
 OBJ := $(SRC:$(SRC_DIR)/%.c=$(OBJ_DIR)/%.o)
 
-CFLAGS= -Wall -g -O -fPIC -I/usr/include/python3.8
+CFLAGS= -Wall -g -O -fPIC -I/usr/include/python3.10
 
 .PHONY: all clean
 
